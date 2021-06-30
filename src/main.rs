@@ -2,16 +2,18 @@ use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
     EmptyMutation, EmptySubscription, Schema,
 };
+use dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
 use tide::{http::mime, Body, Response, StatusCode};
+
 mod graphql_schema;
 mod tables;
 
 #[async_std::main]
 async fn main() -> Result<(), sqlx::Error> {
     // We use the env var that SQLx uses to make our lives easier
-    let pg_connection_str = match env::var("DATABASE_URL") {
+    let pg_connection_str = match dotenv::var("DATABASE_URL") {
         Ok(data) => data,
         Err(_) => {
             println!("You must provide a valid PostgreSQL connection string!");
@@ -19,7 +21,7 @@ async fn main() -> Result<(), sqlx::Error> {
         }
     };
 
-    let http_host_str = env::var("AR_PG_HTTP_HOST_STR").unwrap_or("127.0.0.1:8080".to_string());
+    let http_host_str = dotenv::var("AR_PG_HTTP_HOST_STR").unwrap_or("127.0.0.1:8080".to_string());
 
     let pool = match PgPoolOptions::new()
         .max_connections(5)
@@ -38,9 +40,13 @@ Please check your connection string and try again.\nError details (check the SQL
 
     // TODO migrations
 
-    let schema = Schema::build(graphql_schema::Query, EmptyMutation, EmptySubscription)
-        .data(pool)
-        .finish();
+    let schema = Schema::build(
+        graphql_schema::Query,
+        graphql_schema::Mutation,
+        EmptySubscription,
+    )
+    .data(pool)
+    .finish();
 
     let mut app = tide::new();
     app.at("/graphql")

@@ -467,6 +467,7 @@ dependencies = [
  "async-graphql-tide",
  "async-std",
  "chrono",
+ "dotenv",
  "futures",
  "hmac 0.11.0",
  "jwt",
