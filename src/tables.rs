@@ -11,7 +11,7 @@ use sqlx::{
 #[graphql(complex)]
 pub struct User {
     #[graphql(skip)]
-    pub uuid: Uuid, // Won't let me use option, so I guess we call Uuid:null() at this point to create the struct
+    pub uuid: Uuid, // Won't let me use option, so I guess we call Uuid::null() at this point to create the struct
     pub full_name: String,
     pub email: String,
     pub phone_number: Option<String>,
@@ -36,6 +36,7 @@ impl User {
 }
 
 #[derive(SimpleObject)]
+#[graphql(complex)]
 pub struct Attendance {
     pub id: i32,
     #[graphql(skip)]
