@@ -14,14 +14,8 @@ This diagram explains where `attendance-rs` is located in the RCSC attendance pi
 
 ## Running `attendance-rs`
 
-Setting up `attendance-rs` requires a working PostgreSQL server. Once you have this, you must complete the migrations in the `migrations` directory. These migrations will be automagically executed by SQLx in the future, as there already exists migration capabilities in SQLx.
-
-``` sh
-cd migrations
-psql -d $DATABASE_NAME < *.sql
-```
-
-Once this is done, create a `.env` file that contains the following (The SQLx library requires a working PostgreSQL server to compile this code because of its compile-time SQL checks): 
+Setting up `attendance-rs` requires a working PostgreSQL server. Once you have this, you must migrate the migrations in the `migrations` directory. To do this easily, you should configure the environment variables `DATABASE_URL` so that migrations will work with the `sqlx-cli`, which makes migrations easy to create and run (`attendance-rs` also uses this environment variable to connect to the database, so you must set it).
+Install `sqlx-cli` wth `cargo install sqlx-cli`, then create a `.env` file that contains the following (you could also set these environment variables in any other way you see fit): 
 
 ```
 DATABASE_URL=postgres://USER@HOST/DATABASE
@@ -29,12 +23,17 @@ DATABASE_URL=postgres://USER@HOST/DATABASE
 
 Replace `USER`, `HOST`, and `DATABASE` accordingly.
 
-You can set some other environment variables in the `.env` file (or wherever else you'd like). One is for the runtime database connection and one is for setting the HTTP host/port (the latter is optional and defaults to `127.0.0.1:8080`). For example, your `.env` could look like this:
+Then, to execute the migration:
+
+``` sh
+sqlx migrate run
+```
+
+You can set one other environment variable in the `.env` file (or wherever else you'd like). This is for setting the HTTP host/port (this *is* optional and defaults to `127.0.0.1:8080`). Your `.env` could look like this:
 
 ``` 
 DATABASE_URL=postgres://USER@HOST/DATABASE
-AR_PG_CONNECTION_STR=postgres://USER@HOST/DATABASE
 AR_PG_HTTP_HOST_STR=0.0.0.0:9000
 ```
 
-Once `AR_PG_CONNECTION_STR` (and `AR_PG_HOST_STR`) are set, you can start the server with `cargo run`. Navigate to your `AR_PG_HTTP_HOST_STR` in a web browser to play with the API in the GraphQL playground.
+You can start the server with `cargo run` once the required environment variable is set and the migrations have finished. Navigate to your `AR_PG_HTTP_HOST_STR` (or the default value) in a web browser to play with the API in the GraphQL playground.

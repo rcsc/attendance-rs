@@ -10,7 +10,8 @@ mod tables;
 
 #[async_std::main]
 async fn main() -> Result<(), sqlx::Error> {
-    let pg_connection_str = match env::var("AR_PG_CONNECTION_STR") {
+    // We use the env var that SQLx uses to make our lives easier
+    let pg_connection_str = match env::var("DATABASE_URL") {
         Ok(data) => data,
         Err(_) => {
             println!("You must provide a valid PostgreSQL connection string!");
@@ -29,11 +30,7 @@ async fn main() -> Result<(), sqlx::Error> {
         Err(err) => {
             println!(
                 "An error occurred with opening the PostgreSQL connection.
-Please check your connection string and try again."
-            );
-            println!(
-                "\nError details (check the SQLx library for details): {:#?}",
-                err
+Please check your connection string and try again.\nError details (check the SQLx library for details): {:#?}", err
             );
             std::process::exit(1)
         }
