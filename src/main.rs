@@ -143,6 +143,7 @@ Please check your connection string and try again.\nError details (check the SQL
     println!("First run status is {}\n", FIRST_RUN.read().unwrap());
 
     // Load public and private keys
+    // TODO maybe read as bytes instead of strings since that's what the library wants? It would be more efficient.
     *PRIVATE_KEY.write().unwrap() = read_keyfile_from_envvar("AR_PG_PRIVATE_KEY");
     *PUBLIC_KEY.write().unwrap() = read_keyfile_from_envvar("AR_PG_PUBLIC_KEY");
 
