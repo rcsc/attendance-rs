@@ -3,7 +3,7 @@
 use crate::tables::*;
 use crate::PRIVATE_KEY;
 use async_graphql::*;
-use async_graphql::{guard::Guard, Context, Result};
+use async_graphql::{guard::Guard, validators::Email, Context, Result};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use log::debug;
 use sqlx::{
@@ -127,8 +127,8 @@ impl Mutation {
         &self,
         ctx: &Context<'_>,
         full_name: String,
-        email: String,
-        phone_number: Option<String>,
+        #[graphql(validator(Email))] email: String,
+        #[graphql(validator(PhoneNumber))] phone_number: Option<String>,
     ) -> Result<User> {
         let pool = ctx.data::<Arc<PgPool>>()?;
         let mut new_user = User {
@@ -157,18 +157,22 @@ impl Mutation {
         ctx: &Context<'_>,
         uuid: String,
         full_name: Option<String>,
-        email: Option<String>,
-        phone_number: Option<String>,
+        #[graphql(validator(Email))] email: Option<String>,
+        #[graphql(validator(PhoneNumber))] phone_number: Option<String>,
     ) -> Result<User> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
-        let mut user = sqlx::query_as!(
+        let mut user = match sqlx::query_as!(
             User,
             "SELECT * FROM users WHERE uuid=$1",
             Uuid::parse_str(&uuid)?
         )
-        .fetch_one(&**pool)
-        .await?;
+        .fetch_optional(&**pool)
+        .await?
+        {
+            Some(user) => user,
+            None => return Err(async_graphql::Error::new("User to modify not found!")),
+        };
 
         if let Some(full_name) = full_name {
             user.full_name = full_name;

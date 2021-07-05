@@ -1,5 +1,4 @@
-use async_graphql::guard::Guard;
-use async_graphql::*;
+use async_graphql::{guard::Guard, validators::InputValueValidator, *};
 use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::PgPool,
@@ -104,6 +103,22 @@ impl Guard for CapabilityGuard {
         } else {
             Err("You are not allowed to access this resource.".into())
         }
+    }
+}
+
+pub struct PhoneNumber;
+impl InputValueValidator for PhoneNumber {
+    fn is_valid(&self, value: &Value) -> Result<(), String> {
+        if let Value::String(value_unwrap) = value {
+            match phonenumber::parse(Some(phonenumber::country::Id::US), value_unwrap) {
+                Ok(_) => return Ok(()),
+                Err(e) => return Err(format!("Phone number validation failed: error {}", e)),
+            }
+        }
+
+        Err(format!(
+            "Phone number validation failed. Invalid 'value' provided."
+        ))
     }
 }
 
