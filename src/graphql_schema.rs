@@ -1,8 +1,10 @@
 // Database magic happens HERE
 
 use crate::tables::*;
+use crate::PRIVATE_KEY;
 use async_graphql::*;
 use async_graphql::{Context, Result};
+use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use sqlx::{
     postgres::PgPool,
     types::{
@@ -176,5 +178,47 @@ impl Mutation {
         attendance.id = record.id;
 
         Ok(attendance)
+    }
+
+    async fn generate_token(
+        &self,
+        ctx: &Context<'_>,
+        description: String,
+        capability: TokenCapability,
+        initial_valid_time: Option<DateTime<Utc>>,
+        expiration_time: DateTime<Utc>,
+    ) -> Result<String> {
+        // Generate a JWT
+        let pool = ctx.data::<PgPool>()?;
+        let mut token_struct = Token {
+            description,
+            capability,
+            initial_valid_time,
+            expiration_time,
+            uuid: Uuid::nil(),
+            create_time: Utc::now(),
+        };
+
+        token_struct.uuid = sqlx::query!(
+            "INSERT INTO tokens (description, expiration_time, create_time, capability) VALUES ($1, $2, $3, $4) RETURNING uuid",
+            token_struct.description, token_struct.expiration_time, token_struct.create_time, token_struct.capability as TokenCapability
+        ).fetch_one(pool).await?.uuid;
+
+        let claims = JWTClaims {
+            uuid: token_struct.uuid.to_string(),
+            exp: token_struct.expiration_time.timestamp(),
+            nbf: token_struct.initial_valid_time.map(|item| item.timestamp()),
+        };
+
+        let private_key_read = PRIVATE_KEY.read().unwrap();
+        let private_key_as_bytes = private_key_read.as_ref();
+        match jsonwebtoken::encode(
+            &Header::new(Algorithm::ES256),
+            &claims,
+            &EncodingKey::from_ec_pem(private_key_as_bytes).expect("Expected a valid private key"),
+        ) {
+            Ok(key) => Ok(key),
+            Err(error) => Err(async_graphql::Error::new(format!("{}", error))),
+        }
     }
 }

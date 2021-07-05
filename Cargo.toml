@@ -6,14 +6,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jwt = "0.14.0"
-sha2 = "0.9.5"
-hmac = "0.11.0"
-sqlx = { version = "0.5", features = ["postgres", "runtime-async-std-rustls", "uuid", "chrono"]}
+jsonwebtoken = "7"
+sqlx = { version = "0.5", features = ["postgres", "runtime-async-std-rustls", "uuid", "chrono"] }
 chrono = "0.4.19"
-async-graphql = { version="2.9.5", features = ["chrono"]}
-async-graphql-tide = "2.9.5"
-async-std = { version = "1.9", features = ["attributes"]}
-tide = "0.16.0"
+async-graphql = { version="2.9.5", features = ["chrono"] }
+async-graphql-actix-web = "2.9.5"
+actix-web = "3.3"
 futures = "0.3.15"
-dotenv="0.15.0"
+dotenv = "0.15.0"
+lazy_static = "1.4.0"
+serde = { version = "1", features = ["derive"] }

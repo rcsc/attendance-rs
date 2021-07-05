@@ -1,0 +1,4 @@
+-- Add migration script here
+
+ALTER TABLE users ADD COLUMN create_time TIMESTAMP WITH TIME ZONE NOT NULL;
+ALTER TABLE users ADD COLUMN update_time TIMESTAMP WITH TIME ZONE;

@@ -1,2 +1,4 @@
 /target
 .env
+public_key.pem
+private_key.pem
