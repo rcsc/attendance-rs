@@ -1,3 +1,4 @@
+use async_graphql::guard::Guard;
 use async_graphql::*;
 use serde::{Deserialize, Serialize};
 use sqlx::{
@@ -55,7 +56,7 @@ impl Attendance {
     }
 }
 
-#[derive(sqlx::Type, Enum, Copy, Clone, Eq, PartialEq)]
+#[derive(sqlx::Type, Enum, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Debug)]
 #[sqlx(type_name = "token_capability", rename_all = "lowercase")]
 pub enum TokenCapability {
     Collector,
@@ -78,6 +79,8 @@ pub struct Token {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JWTClaims {
     pub uuid: String,
+    // Capability (shorthand)
+    pub cap: TokenCapability,
     // For validation with the JWT library
     pub exp: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -85,5 +88,22 @@ pub struct JWTClaims {
     // We will want to validate these pieces of data in the JWT **and** in the database
 }
 
+struct CapabilityGuard {
+    capability: TokenCapability,
+}
+
+// Stolen from https://async-graphql.github.io/async-graphql/en/field_guard.html
+#[async_trait::async_trait]
+impl Guard for CapabilityGuard {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
+        if ctx.data_opt::<TokenCapability>() == Some(&self.capability) {
+            Ok(())
+        } else {
+            Err("You are not allowed to access this resource.".into())
+        }
+    }
+}
+
+// TODO custom async_graphql implementation for uuid
 #[ComplexObject]
 impl Token {}

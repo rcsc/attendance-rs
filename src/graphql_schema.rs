@@ -5,6 +5,7 @@ use crate::PRIVATE_KEY;
 use async_graphql::*;
 use async_graphql::{Context, Result};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use log::debug;
 use sqlx::{
     postgres::PgPool,
     types::{
@@ -12,6 +13,7 @@ use sqlx::{
         Uuid,
     },
 };
+use std::sync::Arc;
 
 pub struct Query;
 pub struct Mutation;
@@ -20,10 +22,10 @@ pub struct Mutation;
 impl Query {
     // TODO consolidate user stuff into one findUser and attendance stuff into one findAttendance
     async fn users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         Ok(sqlx::query_as!(User, "SELECT * FROM users")
-            .fetch_all(pool)
+            .fetch_all(&**pool)
             .await?)
     }
 
@@ -32,14 +34,14 @@ impl Query {
         ctx: &Context<'_>,
         full_name: String,
     ) -> Result<Vec<User>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         Ok(sqlx::query_as!(
             User,
             "SELECT * FROM users where full_name LIKE $1",
             "%".to_string() + &full_name + "%"
         )
-        .fetch_all(pool)
+        .fetch_all(&**pool)
         .await?)
     }
 
@@ -48,17 +50,17 @@ impl Query {
         ctx: &Context<'_>,
         full_name: String,
     ) -> Result<Vec<User>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         Ok(
             sqlx::query_as!(User, "SELECT * FROM users where full_name=$1", &full_name)
-                .fetch_all(pool)
+                .fetch_all(&**pool)
                 .await?,
         )
     }
 
     async fn user_by_uuid(&self, ctx: &Context<'_>, uuid: String) -> Result<Option<User>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
         let uuid = match Uuid::parse_str(&uuid) {
             Ok(uuid) => uuid,
             Err(_) => return Ok(None), // I'll do this since there would be no results for an invalid UUID
@@ -66,26 +68,26 @@ impl Query {
 
         Ok(Some(
             sqlx::query_as!(User, "SELECT * FROM users where uuid=$1", uuid)
-                .fetch_one(pool)
+                .fetch_one(&**pool)
                 .await?,
         ))
     }
 
     // This seems really wasteful
     async fn user_by_email(&self, ctx: &Context<'_>, email: String) -> Result<Option<User>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         Ok(Some(
             sqlx::query_as!(User, "SELECT * FROM users where email=$1", email)
-                .fetch_one(pool)
+                .fetch_one(&**pool)
                 .await?,
         ))
     }
 
     async fn attendance(&self, ctx: &Context<'_>) -> Result<Vec<Attendance>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
         Ok(sqlx::query_as!(Attendance, "SELECT * FROM attendance")
-            .fetch_all(pool)
+            .fetch_all(&**pool)
             .await?)
     }
 
@@ -94,13 +96,13 @@ impl Query {
         ctx: &Context<'_>,
         date: DateTime<Utc>,
     ) -> Result<Vec<Attendance>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
         Ok(sqlx::query_as!(
             Attendance,
             "SELECT * FROM attendance WHERE in_time >= $1 AND in_time <= $1",
             date
         )
-        .fetch_all(pool)
+        .fetch_all(&**pool)
         .await?)
     }
 }
@@ -113,7 +115,7 @@ impl Mutation {
         uuid: Option<String>,
         email: Option<String>,
     ) -> Result<Attendance> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
 
         // If both uuid and email are valid, then uuid will be chosen.
         // If only email/uuid, then email/uuid will be chosen
@@ -123,7 +125,7 @@ impl Mutation {
         } else if let Some(email_unwrapped) = email {
             // Query the server to find the uuid
             sqlx::query!("SELECT uuid FROM users WHERE email=$1", email_unwrapped)
-                .fetch_one(pool)
+                .fetch_one(&**pool)
                 .await?
                 .uuid
         } else {
@@ -140,7 +142,7 @@ impl Mutation {
             "SELECT * FROM attendance WHERE user_uuid=$1 ORDER BY in_time DESC LIMIT 1",
             uuid_parsed
         )
-        .fetch_optional(pool)
+        .fetch_optional(&**pool)
         .await?
         {
             if attendance.out_time.is_none() {
@@ -151,7 +153,7 @@ impl Mutation {
                     Utc::now(),
                     attendance.id
                 )
-                .fetch_one(pool)
+                .fetch_one(&**pool)
                 .await?
                 .out_time;
 
@@ -159,7 +161,7 @@ impl Mutation {
             }
         }
 
-        println!("uuid_parsed was {:?}", uuid_parsed);
+        debug!("uuid_parsed was {:?}", uuid_parsed);
 
         let mut attendance = Attendance {
             id: -1,
@@ -172,7 +174,7 @@ impl Mutation {
             attendance.user_uuid,
             attendance.in_time,
         )
-        .fetch_one(pool)
+        .fetch_one(&**pool)
         .await?;
 
         attendance.id = record.id;
@@ -189,7 +191,7 @@ impl Mutation {
         expiration_time: DateTime<Utc>,
     ) -> Result<String> {
         // Generate a JWT
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
         let mut token_struct = Token {
             description,
             capability,
@@ -202,10 +204,11 @@ impl Mutation {
         token_struct.uuid = sqlx::query!(
             "INSERT INTO tokens (description, expiration_time, create_time, capability) VALUES ($1, $2, $3, $4) RETURNING uuid",
             token_struct.description, token_struct.expiration_time, token_struct.create_time, token_struct.capability as TokenCapability
-        ).fetch_one(pool).await?.uuid;
+        ).fetch_one(&**pool).await?.uuid;
 
         let claims = JWTClaims {
             uuid: token_struct.uuid.to_string(),
+            cap: token_struct.capability,
             exp: token_struct.expiration_time.timestamp(),
             nbf: token_struct.initial_valid_time.map(|item| item.timestamp()),
         };

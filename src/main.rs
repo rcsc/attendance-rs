@@ -5,9 +5,10 @@ use async_graphql::{
 };
 use async_graphql_actix_web::{Request, Response};
 use dotenv;
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use sqlx::postgres::PgPoolOptions;
-use std::sync::RwLock;
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use log::{debug, error, info, warn};
+use sqlx::postgres::{PgPool, PgPoolOptions};
+use std::sync::{Arc, RwLock};
 
 use lazy_static::lazy_static;
 
@@ -45,6 +46,7 @@ async fn graphql_playground() -> HttpResponse {
 }
 
 async fn graphql_request(
+    pool: web::Data<Arc<PgPool>>,
     schema: web::Data<Schema<graphql_schema::Query, graphql_schema::Mutation, EmptySubscription>>,
     request: HttpRequest,
     graphql_request: Request,
@@ -59,13 +61,26 @@ async fn graphql_request(
 
         let graphql_request = graphql_request.into_inner();
         // Nope (TODO only disable first run mode AFTER they issue a token, and not after the first request? I'm undecided.)
-        return schema.execute(graphql_request).await.into();
+        let graphql_response = schema.execute(graphql_request).await.into();
+
+        // Check if we should continue first-run mode
+        match check_first_run(&*pool).await {
+            Ok(continue_first_run) if !continue_first_run => {
+                info!("NOTICE: Disabling first-run mode. A token has been generated.");
+                *FIRST_RUN.write().unwrap() = false;
+            }
+            Err(e) => {
+                warn!("WARNING: First-run check returned error {}", e);
+            }
+            _ => {} // Continue first-run mode
+        }
+
+        return graphql_response;
     }
 
     if let Some(token) = request.headers().get("Token") {
         if let Ok(token_str) = token.to_str() {
             // Fetch token from SQL and check if it's valid
-            println!("Token: {}", token_str);
             // TODO potential inefficiency here since it has to do this every time
             let public_key_read = PUBLIC_KEY.read().unwrap();
             let public_key_as_bytes = public_key_read.as_ref();
@@ -74,14 +89,20 @@ async fn graphql_request(
                 Err(e) => return err_msg_response(&format!("Expected a valid public key. Please check your server configuration. Error: {}", e)),
             };
 
-            match decode::<tables::JWTClaims>(token_str, &decoding_key, &Validation::default()) {
+            match decode::<tables::JWTClaims>(
+                token_str,
+                &decoding_key,
+                &Validation::new(Algorithm::ES256),
+            ) {
                 Ok(claim_data) => {
-                    println!("{:#?} details", claim_data);
+                    debug!("{:#?} details", claim_data);
 
                     // TODO x-verify the claim data with the database.
                     // If the data doesn't match with the data in the db,
                     // **notify everything and everyone immediately, since someone stole the signing key**
-                    let graphql_request = graphql_request.into_inner();
+                    // (on second thought, you're not supposed to do this since this defeats the point of a JWT)
+
+                    let graphql_request = graphql_request.into_inner().data(claim_data.claims.cap);
                     return schema.execute(graphql_request).await.into();
                 }
                 Err(e) => {
@@ -94,13 +115,36 @@ async fn graphql_request(
     err_msg_response("A valid token is missing. Please provide one in the HTTP header.")
 }
 
+async fn check_first_run(pool: &PgPool) -> Result<bool, String> {
+    // Checks if first-run mode should be enabled or disabled
+    let number_of_tokens = match sqlx::query!("SELECT COUNT(*) FROM tokens")
+        .fetch_one(pool)
+        .await
+    {
+        Ok(count_result) => match count_result.count {
+            Some(count_result_unwrapped) => count_result_unwrapped,
+            None => {
+                return Err("Could not check whether or not to run in first-run mode. Exiting (also this should never happen).
+                            SELECT COUNT(*) returned None. Maybe migrate the database?".to_string())
+            }
+        },
+        Err(e) => {
+            return Err(format!("Could not check whether or not to run in first-run mode. Exiting. Error details: {:#?}",e))
+        }
+    };
+    debug!("Checking number of tokens: {}", number_of_tokens);
+
+    Ok(if number_of_tokens == 0 { true } else { false })
+}
+
 fn error_exit(error_message: &str) -> ! {
-    eprintln!("{}", error_message);
+    error!("{}", error_message);
     std::process::exit(1);
 }
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
+    env_logger::init();
     // We use the env var that SQLx uses to make our lives easier
     let pg_connection_str = match dotenv::var("DATABASE_URL") {
         Ok(data) => data,
@@ -109,7 +153,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let http_host_str = dotenv::var("AR_PG_HTTP_HOST_STR").unwrap_or("127.0.0.1:8080".to_string());
 
-    let pool = match PgPoolOptions::new()
+    let pool = Arc::new(match PgPoolOptions::new()
         .max_connections(5)
         .connect(&pg_connection_str)
         .await
@@ -121,26 +165,14 @@ async fn main() -> Result<(), std::io::Error> {
 Please check your connection string and try again.\nError details (check the SQLx library for details): {:#?}", err
             ))
         }
-    };
+    });
 
     // If there are zero tokens in the database, we will remove authentication so someone can create a token (and then immediately turn off "first run" mode)
-    let number_of_tokens = match sqlx::query!("SELECT COUNT(*) FROM tokens")
-        .fetch_one(&pool)
-        .await
-    {
-        Ok(count_result) => match count_result.count {
-            Some(count_result_unwrapped) => count_result_unwrapped,
-            None => {
-                error_exit("Could not check whether or not to run in first-run mode. Exiting (also this should never happen).
-                            SELECT COUNT(*) returned None. Maybe migrate the database?")
-            }
-        },
-        Err(e) => {
-            error_exit(&format!("Could not check whether or not to run in first-run mode. Exiting. Error details: {:#?}",e))
-        }
+    *FIRST_RUN.write().unwrap() = match check_first_run(&*pool).await {
+        Ok(should_first_run) => should_first_run,
+        Err(e) => error_exit(&e),
     };
-    *FIRST_RUN.write().unwrap() = if number_of_tokens == 0 { true } else { false };
-    println!("First run status is {}\n", FIRST_RUN.read().unwrap());
+    info!("First run status is {}\n", FIRST_RUN.read().unwrap());
 
     // Load public and private keys
     // TODO maybe read as bytes instead of strings since that's what the library wants? It would be more efficient.
@@ -152,13 +184,14 @@ Please check your connection string and try again.\nError details (check the SQL
         graphql_schema::Mutation,
         EmptySubscription,
     )
-    .data(pool)
+    .data(Arc::clone(&pool))
     .finish();
 
-    println!("GraphQL API is listening at {}", http_host_str);
+    info!("GraphQL API is listening at {}", http_host_str);
 
     HttpServer::new(move || {
         App::new()
+            .data(Arc::clone(&pool))
             .data(schema.clone())
             .wrap(Logger::default())
             .service(
