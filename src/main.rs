@@ -102,6 +102,7 @@ async fn graphql_request(
                     // **notify everything and everyone immediately, since someone stole the signing key**
                     // (on second thought, you're not supposed to do this since this defeats the point of a JWT)
 
+                    // Pass the capability as data that we can use in the guard
                     let graphql_request = graphql_request.into_inner().data(claim_data.claims.cap);
                     return schema.execute(graphql_request).await.into();
                 }

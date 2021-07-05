@@ -88,15 +88,18 @@ pub struct JWTClaims {
     // We will want to validate these pieces of data in the JWT **and** in the database
 }
 
-struct CapabilityGuard {
-    capability: TokenCapability,
+pub struct CapabilityGuard {
+    pub capability: TokenCapability,
 }
 
 // Stolen from https://async-graphql.github.io/async-graphql/en/field_guard.html
 #[async_trait::async_trait]
 impl Guard for CapabilityGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        if ctx.data_opt::<TokenCapability>() == Some(&self.capability) {
+        // Administrators get access to everything, since they are administrators
+        if ctx.data_opt::<TokenCapability>() == Some(&self.capability)
+            || ctx.data_opt::<TokenCapability>() == Some(&TokenCapability::Administrator)
+        {
             Ok(())
         } else {
             Err("You are not allowed to access this resource.".into())

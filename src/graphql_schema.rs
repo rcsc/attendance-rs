@@ -3,7 +3,7 @@
 use crate::tables::*;
 use crate::PRIVATE_KEY;
 use async_graphql::*;
-use async_graphql::{Context, Result};
+use async_graphql::{guard::Guard, Context, Result};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use log::debug;
 use sqlx::{
@@ -21,6 +21,7 @@ pub struct Mutation;
 #[Object]
 impl Query {
     // TODO consolidate user stuff into one findUser and attendance stuff into one findAttendance
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
     async fn users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
@@ -29,6 +30,7 @@ impl Query {
             .await?)
     }
 
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
     async fn user_by_full_name_search(
         &self,
         ctx: &Context<'_>,
@@ -45,6 +47,7 @@ impl Query {
         .await?)
     }
 
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
     async fn user_by_full_name_match(
         &self,
         ctx: &Context<'_>,
@@ -59,6 +62,10 @@ impl Query {
         )
     }
 
+    #[graphql(guard(or(
+        CapabilityGuard(capability = "TokenCapability::Collector"),
+        CapabilityGuard(capability = "TokenCapability::Viewer")
+    )))]
     async fn user_by_uuid(&self, ctx: &Context<'_>, uuid: String) -> Result<Option<User>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
         let uuid = match Uuid::parse_str(&uuid) {
@@ -73,7 +80,11 @@ impl Query {
         ))
     }
 
-    // This seems really wasteful
+    // This seems really wasteful (less code by consolidating each "user_by" into one thing?)
+    #[graphql(guard(or(
+        CapabilityGuard(capability = "TokenCapability::Collector"),
+        CapabilityGuard(capability = "TokenCapability::Viewer")
+    )))]
     async fn user_by_email(&self, ctx: &Context<'_>, email: String) -> Result<Option<User>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
@@ -84,6 +95,7 @@ impl Query {
         ))
     }
 
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
     async fn attendance(&self, ctx: &Context<'_>) -> Result<Vec<Attendance>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
         Ok(sqlx::query_as!(Attendance, "SELECT * FROM attendance")
@@ -91,6 +103,7 @@ impl Query {
             .await?)
     }
 
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
     async fn attendance_by_date(
         &self,
         ctx: &Context<'_>,
@@ -109,6 +122,7 @@ impl Query {
 
 #[Object]
 impl Mutation {
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
     async fn log_attendance(
         &self,
         ctx: &Context<'_>,
@@ -182,6 +196,8 @@ impl Mutation {
         Ok(attendance)
     }
 
+    // Only administrators
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Administrator")))]
     async fn generate_token(
         &self,
         ctx: &Context<'_>,
