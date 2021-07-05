@@ -123,6 +123,77 @@ impl Query {
 #[Object]
 impl Mutation {
     #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
+    async fn create_user(
+        &self,
+        ctx: &Context<'_>,
+        full_name: String,
+        email: String,
+        phone_number: Option<String>,
+    ) -> Result<User> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+        let mut new_user = User {
+            full_name,
+            email,
+            phone_number,
+            uuid: Uuid::nil(),
+            create_time: Utc::now(),
+            update_time: None,
+        };
+
+        // formatter won't format this for some reason
+        new_user.uuid = sqlx::query!(
+            "INSERT INTO users (full_name, email, phone_number, create_time) VALUES ($1, $2, $3, $4) RETURNING uuid",
+            new_user.full_name, new_user.email, new_user.phone_number, new_user.create_time)
+            .fetch_one(&**pool)
+            .await?
+            .uuid;
+
+        Ok(new_user)
+    }
+
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
+    async fn update_user(
+        &self,
+        ctx: &Context<'_>,
+        uuid: String,
+        full_name: Option<String>,
+        email: Option<String>,
+        phone_number: Option<String>,
+    ) -> Result<User> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        let mut user = sqlx::query_as!(
+            User,
+            "SELECT * FROM users WHERE uuid=$1",
+            Uuid::parse_str(&uuid)?
+        )
+        .fetch_one(&**pool)
+        .await?;
+
+        if let Some(full_name) = full_name {
+            user.full_name = full_name;
+        }
+        if let Some(email) = email {
+            user.email = email;
+        }
+        if let Some(phone_number_data) = phone_number {
+            user.phone_number = Some(phone_number_data);
+        }
+
+        sqlx::query!(
+            "UPDATE users SET (full_name, email, phone_number) = ($1, $2, $3) WHERE uuid=$4",
+            user.full_name,
+            user.email,
+            user.phone_number,
+            user.uuid
+        )
+        .execute(&**pool)
+        .await?;
+
+        Ok(user)
+    }
+
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
     async fn log_attendance(
         &self,
         ctx: &Context<'_>,
