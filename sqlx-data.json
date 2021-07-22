@@ -1,0 +1,603 @@
+{
+  "db": "PostgreSQL",
+  "00fb81da034fb1ab9d308dce9c8af62ae942bd2b806ac9b0da791855d2386e15": {
+    "query": "SELECT * FROM users where email=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "03491d8c27a4e4175ef9df50d1e5340ded5baadf008b8d887740ff04fdd97eaa": {
+    "query": "SELECT * FROM users where full_name=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "26e7e05427bc7dabcd7815d27764fda2baf4cfe60a2d2d6ee2a1f773dccbbce2": {
+    "query": "SELECT * FROM users",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "29306d12dd7e21d62b00aaa2b466480feb62855cb9bb1716cefad3dd91273644": {
+    "query": "INSERT INTO attendance (user_uuid, in_time) VALUES ($1, $2) RETURNING id",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Timestamptz"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "3f0fa09346c81e7a923ee736105646bfb8e82951ef7b551e172d831b1b42c0d6": {
+    "query": "SELECT * FROM users where full_name LIKE $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "636da0afeaeb91fa82a01e7c200764dc3705a1d356395273bdf318d66242b90a": {
+    "query": "UPDATE users SET (full_name, email, phone_number) = ($1, $2, $3) WHERE uuid=$4",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "70c714b44699894a2db52351b470aeff3548526a2dfffbf2bc70b42018901a63": {
+    "query": "INSERT INTO tokens (description, expiration_time, create_time, capability) VALUES ($1, $2, $3, $4) RETURNING uuid",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Timestamptz",
+          "Timestamptz",
+          {
+            "Custom": {
+              "name": "token_capability",
+              "kind": {
+                "Enum": [
+                  "collector",
+                  "viewer",
+                  "administrator"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "789228ec8cd32a07701472de481473156f8772ce75c53f8122399d49f4a84250": {
+    "query": "SELECT * FROM attendance",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "in_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 3,
+          "name": "out_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "7a63afc8e3204467e57e8606196606b54e5743b7abcd08b9ecab2ed6771dfb29": {
+    "query": "SELECT * FROM attendance WHERE in_time >= $1 AND in_time <= $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "in_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 3,
+          "name": "out_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Timestamptz"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "804ced391eea131317549ebee01266b8a8ba3a4566ecbf2ba57665b5dbbd5a0b": {
+    "query": "SELECT * FROM users where uuid=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "8e5709f9e8c1614bfd5692ef541025605fcf699f8c5e074189a9b5013ae6ffff": {
+    "query": "SELECT uuid FROM users WHERE email=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "ab38f137950d11c68ab218f467fb32d3a84d0695692eb3223af1451bae90dfcf": {
+    "query": "UPDATE attendance SET out_time=$1 WHERE id=$2 RETURNING out_time",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "out_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Timestamptz",
+          "Int4"
+        ]
+      },
+      "nullable": [
+        true
+      ]
+    }
+  },
+  "bd6ff10b6ab9406f2a1c9eeef21b8cabd8ec9460a23699efe1ea7ba94c1a22fd": {
+    "query": "SELECT * FROM attendance WHERE user_uuid=$1 ORDER BY in_time DESC LIMIT 1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "in_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 3,
+          "name": "out_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "c15e36bd3cc33c0a4ac29de6cc3fd5f3820e89501112cc6322077cfeb406dacf": {
+    "query": "INSERT INTO users (full_name, email, phone_number, create_time) VALUES ($1, $2, $3, $4) RETURNING uuid",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Timestamptz"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "e063ce0446f50e11047db3439cda96a7c40c75bcb51befbd56246696f1be4daa": {
+    "query": "SELECT * FROM users WHERE uuid=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "e9a90307f3ba9750d5d20b31880e8f9a44434826ffd019b7e7ccdedb1cba099c": {
+    "query": "SELECT * FROM attendance WHERE user_uuid=$1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "in_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 3,
+          "name": "out_time",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true
+      ]
+    }
+  },
+  "fe91353cbcdda94acc7a541bb93db4f4a3ddb4550b6a4ab935184b30562cd3e3": {
+    "query": "SELECT COUNT(*) FROM tokens",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "count",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        null
+      ]
+    }
+  }
+}
