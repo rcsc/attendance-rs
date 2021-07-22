@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 jsonwebtoken = "7"
-sqlx = { version = "0.5", features = ["postgres", "runtime-async-std-rustls", "uuid", "chrono"] }
+sqlx = { version = "0.5", features = ["postgres", "runtime-async-std-rustls", "uuid", "chrono", "offline"] }
 chrono = "0.4.19"
 async-graphql = { version="2.9.5", features = ["chrono"] }
 async-graphql-actix-web = "2.9.5"
