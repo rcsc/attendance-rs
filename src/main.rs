@@ -40,9 +40,7 @@ fn read_keyfile_from_envvar(var: &str) -> String {
 async fn graphql_playground() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(playground_source(
-            GraphQLPlaygroundConfig::new("/").subscription_endpoint("/"),
-        ))
+        .body(playground_source(GraphQLPlaygroundConfig::new("/graphql")))
 }
 
 async fn graphql_request(

@@ -12,7 +12,7 @@ This diagram explains where `attendance-rs` is located in the RCSC attendance pi
 
 ![attendance-rs diagram](graphics/attendance-rs-diagram.png)
 
-## Running `attendance-rs`
+## Running `attendance-rs` in development
 
 Setting up `attendance-rs` requires a working PostgreSQL server. Once you have this, you must migrate the migrations in the `migrations` directory. To do this easily, you should configure the environment variables `DATABASE_URL` so that migrations will work with the `sqlx-cli`, which makes migrations easy to create and run (`attendance-rs` also uses this environment variable to connect to the database, so you must set it).
 Install `sqlx-cli` with `cargo install sqlx-cli`, then create a `.env` file that contains the following (you could also set these environment variables in any other way you see fit): 
@@ -41,3 +41,6 @@ AR_PG_PUBLIC_KEY=public_key.pem
 ```
 
 You can start the server with `cargo run` once the required environment variable is set and the migrations have finished. Navigate to your `AR_PG_HTTP_HOST_STR` (or the default value) in a web browser to play with the API in the GraphQL playground.
+
+## Running `attendance-rs` in production
+
