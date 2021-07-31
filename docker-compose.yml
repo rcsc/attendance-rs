@@ -13,6 +13,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: always
 
   attendance-rs-server:
     build: .
@@ -25,3 +26,4 @@ services:
        condition: service_healthy
     env_file:
      - .deploy.attendance-rs.env
+    restart: always
