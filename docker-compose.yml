@@ -9,7 +9,7 @@ services:
      - .deploy.postgres.env
     # stolen from https://stackoverflow.com/questions/35069027/docker-wait-for-postgresql-to-be-running
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U attendance-rs1"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
