@@ -95,7 +95,7 @@ pub struct FirstRunGuard;
 
 #[async_trait::async_trait]
 impl Guard for FirstRunGuard {
-    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
+    async fn check(&self, _: &Context<'_>) -> Result<()> {
         if *FIRST_RUN.read().unwrap() {
             // First run mode is activated, so return Ok
             Ok(())
