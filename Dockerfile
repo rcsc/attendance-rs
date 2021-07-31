@@ -6,7 +6,11 @@ COPY . /build
 ENV SQLX_OFFLINE true
 RUN apk add musl-dev openssl-dev
 RUN cargo build --release
+RUN cargo install sqlx-cli
 
-FROM scratch
+FROM busybox
+COPY --from=0 /usr/local/cargo/bin/sqlx /sqlx
+COPY --from=0 /build/migrations /migrations
 COPY --from=0 /build/target/release/attendance-rs /attendance-rs
-CMD ["/attendance-rs"]
+COPY --from=0 /build/attendance-rs-startup.sh /attendance-rs-startup.sh
+CMD ["/attendance-rs-startup.sh"]

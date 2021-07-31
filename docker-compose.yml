@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  attendance-rs-db:
+    image: postgres
+    volumes: 
+     - ../attendance-rs-data/dbdata/:/var/lib/postgresql/data
+    env_file:
+     - .deploy.postgres.env
+    # stolen from https://stackoverflow.com/questions/35069027/docker-wait-for-postgresql-to-be-running
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U attendance-rs1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  attendance-rs-server:
+    build: .
+    volumes: 
+     - ../attendance-rs-data/keys:/keys
+    ports: 
+     - "8080:8080"
+    depends_on:
+     attendance-rs-db:
+       condition: service_healthy
+    env_file:
+     - .deploy.attendance-rs.env
