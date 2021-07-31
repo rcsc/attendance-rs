@@ -8,6 +8,10 @@ use sqlx::{
     },
 };
 
+use crate::FIRST_RUN;
+
+static ACCESS_DENIED_MESSAGE: &str = "You are not allowed to access this resource";
+
 #[derive(Debug, SimpleObject)]
 #[graphql(complex)]
 pub struct User {
@@ -87,6 +91,20 @@ pub struct JWTClaims {
     // We will want to validate these pieces of data in the JWT **and** in the database
 }
 
+pub struct FirstRunGuard;
+
+#[async_trait::async_trait]
+impl Guard for FirstRunGuard {
+    async fn check(&self, ctx: &Context<'_>) -> Result<()> {
+        if *FIRST_RUN.read().unwrap() {
+            // First run mode is activated, so return Ok
+            Ok(())
+        } else {
+            Err(ACCESS_DENIED_MESSAGE.into())
+        }
+    }
+}
+
 pub struct CapabilityGuard {
     pub capability: TokenCapability,
 }
@@ -101,7 +119,7 @@ impl Guard for CapabilityGuard {
         {
             Ok(())
         } else {
-            Err("You are not allowed to access this resource.".into())
+            Err(ACCESS_DENIED_MESSAGE.into())
         }
     }
 }

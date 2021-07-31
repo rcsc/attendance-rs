@@ -60,6 +60,7 @@ async fn graphql_request(
         // *FIRST_RUN.write().unwrap() = false;
 
         let graphql_request = graphql_request.into_inner();
+
         // Nope (TODO only disable first run mode AFTER they issue a token, and not after the first request? I'm undecided.)
         let graphql_response = schema.execute(graphql_request).await.into();
 

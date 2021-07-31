@@ -272,7 +272,10 @@ impl Mutation {
     }
 
     // Only administrators
-    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Administrator")))]
+    #[graphql(guard(or(
+        CapabilityGuard(capability = "TokenCapability::Administrator"),
+        FirstRunGuard()
+    )))]
     async fn generate_token(
         &self,
         ctx: &Context<'_>,
