@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{guard, middleware::Logger, web, App, HttpRequest, HttpResponse, HttpServer};
 use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
@@ -190,9 +191,15 @@ Please check your connection string and try again.\nError details (check the SQL
     info!("GraphQL API is listening at {}", http_host_str);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin() // We *probably* want this in the end
+            .allowed_header("Token")
+            .max_age(1800);
+
         App::new()
             .data(Arc::clone(&pool))
             .data(schema.clone())
+            .wrap(cors)
             .wrap(Logger::default())
             .service(
                 web::resource("/graphql")
