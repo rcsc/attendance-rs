@@ -7,6 +7,7 @@ use sqlx::{
         Uuid,
     },
 };
+use std::sync::Arc;
 
 use crate::FIRST_RUN;
 
@@ -31,13 +32,13 @@ impl User {
         hyphenated.to_string()
     }
     async fn attendance(&self, ctx: &Context<'_>) -> Result<Vec<Attendance>> {
-        let pool = ctx.data::<PgPool>()?;
+        let pool = ctx.data::<Arc<PgPool>>()?;
         Ok(sqlx::query_as!(
             Attendance,
             "SELECT * FROM attendance WHERE user_uuid=$1",
             self.uuid
         )
-        .fetch_all(pool)
+        .fetch_all(&**pool)
         .await?)
     }
 }
