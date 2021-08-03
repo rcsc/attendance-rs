@@ -6,6 +6,7 @@ use async_graphql::{
 };
 use async_graphql_actix_web::{Request, Response};
 use dotenv;
+use http;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use log::{debug, error, info, warn};
 use sqlx::postgres::{PgPool, PgPoolOptions};
@@ -192,8 +193,15 @@ Please check your connection string and try again.\nError details (check the SQL
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin() // We *probably* want this in the end
-            .allowed_header("Token")
+            .allow_any_origin()
+            // From https://docs.rs/actix-cors/0.5.4/actix_cors/struct.Cors.html#method.allowed_methods, since apparently
+            // the default methods are not actually default
+            .allowed_methods(vec![
+                "GET", "HEAD", "POST", "OPTIONS", "PUT", "PATCH", "DELETE",
+            ])
+            .supports_credentials()
+            .allowed_headers(vec!["Token", "X-Apollo-Tracing"])
+            .allowed_header(http::header::CONTENT_TYPE)
             .max_age(1800);
 
         App::new()
