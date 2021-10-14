@@ -234,19 +234,23 @@ impl Mutation {
         .fetch_optional(&**pool)
         .await?
         {
-            if attendance.out_time.is_none() {
-                // Run an update query, as the user checked in, but not out
+            if let None = attendance.out_time {
+                // We only let people sign out three hours or less after sign in (otherwise we sign in instead of sign out)
+                // TODO make this amount configurable
+                if (Utc::now() - attendance.in_time).num_hours() <= 3 {
+                    // Run an update query, as the user checked in, but not out
 
-                attendance.out_time = sqlx::query!(
-                    "UPDATE attendance SET out_time=$1 WHERE id=$2 RETURNING out_time",
-                    Utc::now(),
-                    attendance.id
-                )
-                .fetch_one(&**pool)
-                .await?
-                .out_time;
+                    attendance.out_time = sqlx::query!(
+                        "UPDATE attendance SET out_time=$1 WHERE id=$2 RETURNING out_time",
+                        Utc::now(),
+                        attendance.id
+                    )
+                    .fetch_one(&**pool)
+                    .await?
+                    .out_time;
 
-                return Ok(attendance);
+                    return Ok(attendance);
+                }
             }
         }
 
