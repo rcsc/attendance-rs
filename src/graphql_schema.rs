@@ -18,6 +18,7 @@ use std::{collections::HashMap, sync::Arc};
 pub struct Query;
 pub struct Mutation;
 
+// TODO implement a function to modify a user to have an altIdField
 #[Object]
 impl Query {
     // TODO consolidate user stuff into one findUser and attendance stuff into one findAttendance
