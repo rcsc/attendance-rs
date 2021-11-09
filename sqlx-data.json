@@ -33,6 +33,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -46,6 +51,7 @@
         false,
         true,
         false,
+        true,
         true
       ]
     }
@@ -83,6 +89,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -96,6 +107,7 @@
         false,
         true,
         false,
+        true,
         true
       ]
     }
@@ -133,6 +145,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -144,6 +161,7 @@
         false,
         true,
         false,
+        true,
         true
       ]
     }
@@ -202,6 +220,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -215,6 +238,64 @@
         false,
         true,
         false,
+        true,
+        true
+      ]
+    }
+  },
+  "541fedebea5f9e8197cdd4b680ced9be437e3254faba2869b44945756a1faa82": {
+    "query": "SELECT * FROM users where alt_id_fields->($1) = ($2)",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "full_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 2,
+          "name": "email",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "phone_number",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "create_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "update_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
         true
       ]
     }
@@ -342,6 +423,30 @@
       ]
     }
   },
+  "7d9a69e2019a1c42440e7ba6d1ce9bb29addb2bf80b21c612cf1a762a14f1582": {
+    "query": "INSERT INTO users (full_name, email, phone_number, create_time, alt_id_fields) VALUES ($1, $2, $3, $4, $5) RETURNING uuid",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "uuid",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Timestamptz",
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
   "804ced391eea131317549ebee01266b8a8ba3a4566ecbf2ba57665b5dbbd5a0b": {
     "query": "SELECT * FROM users where uuid=$1",
     "describe": {
@@ -375,6 +480,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -388,6 +498,7 @@
         false,
         true,
         false,
+        true,
         true
       ]
     }
@@ -471,29 +582,6 @@
       ]
     }
   },
-  "c15e36bd3cc33c0a4ac29de6cc3fd5f3820e89501112cc6322077cfeb406dacf": {
-    "query": "INSERT INTO users (full_name, email, phone_number, create_time) VALUES ($1, $2, $3, $4) RETURNING uuid",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "uuid",
-          "type_info": "Uuid"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Timestamptz"
-        ]
-      },
-      "nullable": [
-        false
-      ]
-    }
-  },
   "e063ce0446f50e11047db3439cda96a7c40c75bcb51befbd56246696f1be4daa": {
     "query": "SELECT * FROM users WHERE uuid=$1",
     "describe": {
@@ -527,6 +615,11 @@
           "ordinal": 5,
           "name": "update_time",
           "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "alt_id_fields",
+          "type_info": "Jsonb"
         }
       ],
       "parameters": {
@@ -540,6 +633,7 @@
         false,
         true,
         false,
+        true,
         true
       ]
     }
