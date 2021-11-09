@@ -660,6 +660,7 @@ dependencies = [
  "log",
  "phonenumber",
  "serde",
+ "serde_json",
  "sqlx",
 ]
 

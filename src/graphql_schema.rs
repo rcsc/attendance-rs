@@ -13,7 +13,7 @@ use sqlx::{
         Uuid,
     },
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 pub struct Query;
 pub struct Mutation;
@@ -60,6 +60,28 @@ impl Query {
                 .fetch_all(&**pool)
                 .await?,
         )
+    }
+
+    // Restrict to just collectors since the viewers should always be able to use the other thing
+    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
+    async fn user_by_alt_id_field(
+        &self,
+        ctx: &Context<'_>,
+        alt_field: String,
+        alt_value: String,
+    ) -> Result<Option<User>> {
+        let pool = ctx.data::<Arc<PgPool>>()?;
+
+        Ok(Some(
+            sqlx::query_as!(
+                User,
+                "SELECT * FROM users where alt_id_fields->($1) = ($2)",
+                alt_field,
+                serde_json::to_value(alt_value)?
+            )
+            .fetch_one(&**pool)
+            .await?,
+        ))
     }
 
     #[graphql(guard(or(
@@ -129,8 +151,17 @@ impl Mutation {
         full_name: String,
         #[graphql(validator(Email))] email: String,
         #[graphql(validator(PhoneNumber))] phone_number: Option<String>,
+        alt_id_fields: Option<HashMap<String, String>>,
     ) -> Result<User> {
         let pool = ctx.data::<Arc<PgPool>>()?;
+
+        // We would use map, but it makes it harder to bubble Result errors from the function
+        let mapped_alt_id_fields = if let Some(unwrap_alt_id_fields) = alt_id_fields {
+            Some(serde_json::to_value(unwrap_alt_id_fields)?)
+        } else {
+            None
+        };
+
         let mut new_user = User {
             full_name,
             email,
@@ -138,12 +169,13 @@ impl Mutation {
             uuid: Uuid::nil(),
             create_time: Utc::now(),
             update_time: None,
+            alt_id_fields: mapped_alt_id_fields,
         };
 
         // formatter won't format this for some reason
         new_user.uuid = sqlx::query!(
-            "INSERT INTO users (full_name, email, phone_number, create_time) VALUES ($1, $2, $3, $4) RETURNING uuid",
-            new_user.full_name, new_user.email, new_user.phone_number, new_user.create_time)
+            "INSERT INTO users (full_name, email, phone_number, create_time, alt_id_fields) VALUES ($1, $2, $3, $4, $5) RETURNING uuid",
+            new_user.full_name, new_user.email, new_user.phone_number, new_user.create_time, new_user.alt_id_fields)
             .fetch_one(&**pool)
             .await?
             .uuid;

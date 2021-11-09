@@ -7,7 +7,7 @@ use sqlx::{
         Uuid,
     },
 };
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::FIRST_RUN;
 
@@ -23,6 +23,9 @@ pub struct User {
     pub phone_number: Option<String>,
     pub create_time: DateTime<Utc>,
     pub update_time: Option<DateTime<Utc>>,
+    #[graphql(skip)]
+    // This is *supposed* to be a serde_json::Value::Object
+    pub alt_id_fields: Option<serde_json::Value>,
 }
 
 #[ComplexObject]
@@ -30,6 +33,17 @@ impl User {
     async fn uuid(&self) -> String {
         let hyphenated = self.uuid.to_hyphenated().clone();
         hyphenated.to_string()
+    }
+    async fn alt_id_fields(&self) -> Result<Option<HashMap<String, String>>> {
+        // Again, the ? operator doesn't work in closures, annoyingly.
+        if let Some(unwrapped_alt_id_fields) = &self.alt_id_fields {
+            Ok(Some(serde_json::from_value(
+                // You basically have to clone here.
+                unwrapped_alt_id_fields.clone(),
+            )?))
+        } else {
+            Ok(None)
+        }
     }
     async fn attendance(&self, ctx: &Context<'_>) -> Result<Vec<Attendance>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
