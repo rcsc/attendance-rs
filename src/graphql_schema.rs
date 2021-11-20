@@ -236,11 +236,12 @@ impl Mutation {
         ctx: &Context<'_>,
         uuid: Option<String>,
         email: Option<String>,
+        alt_id_field: Option<String>,
+        alt_id_value: Option<String>,
     ) -> Result<Attendance> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
-        // If both uuid and email are valid, then uuid will be chosen.
-        // If only email/uuid, then email/uuid will be chosen
+        // Chosen in the order of uuid first, then email, then alt_id values.
 
         let uuid_parsed = if let Some(uuid_unwrapped) = uuid {
             Uuid::parse_str(&uuid_unwrapped)?
@@ -250,6 +251,19 @@ impl Mutation {
                 .fetch_one(&**pool)
                 .await?
                 .uuid
+        } else if let (Some(alt_id_field_unwrapped), Some(alt_id_value_unwrapped)) =
+            (alt_id_field, alt_id_value)
+        {
+            // Kinda copied from find_user_by_alt_id
+            sqlx::query_as!(
+                User,
+                "SELECT * FROM users where alt_id_fields->($1) = ($2)",
+                alt_id_field_unwrapped,
+                serde_json::to_value(alt_id_value_unwrapped)?
+            )
+            .fetch_one(&**pool)
+            .await?
+            .uuid
         } else {
             // I'm pretty sure this code will never get executed
             return Err(async_graphql::Error::new(
