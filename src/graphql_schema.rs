@@ -192,6 +192,7 @@ impl Mutation {
         full_name: Option<String>,
         #[graphql(validator(Email))] email: Option<String>,
         #[graphql(validator(PhoneNumber))] phone_number: Option<String>,
+        alt_id_fields: Option<HashMap<String, String>>,
     ) -> Result<User> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
@@ -216,12 +217,16 @@ impl Mutation {
         if let Some(phone_number_data) = phone_number {
             user.phone_number = Some(phone_number_data);
         }
+        if let Some(alt_id_fields_unwrapped) = alt_id_fields {
+            user.alt_id_fields = Some(serde_json::to_value(alt_id_fields_unwrapped)?);
+        }
 
         sqlx::query!(
-            "UPDATE users SET (full_name, email, phone_number) = ($1, $2, $3) WHERE uuid=$4",
+            "UPDATE users SET (full_name, email, phone_number, alt_id_fields) = ($1, $2, $3, $4) WHERE uuid=$5",
             user.full_name,
             user.email,
             user.phone_number,
+            user.alt_id_fields,
             user.uuid
         )
         .execute(&**pool)
