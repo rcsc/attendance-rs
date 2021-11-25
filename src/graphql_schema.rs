@@ -22,7 +22,12 @@ pub struct Mutation;
 #[Object]
 impl Query {
     // TODO consolidate user stuff into one findUser and attendance stuff into one findAttendance
-    #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Viewer")))]
+    // The collector gets this list since they might need to associate a new ID method
+    // with a specific pre-existing user.
+    #[graphql(guard(or(
+        CapabilityGuard(capability = "TokenCapability::Collector"),
+        CapabilityGuard(capability = "TokenCapability::Viewer")
+    )))]
     async fn users(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
         let pool = ctx.data::<Arc<PgPool>>()?;
 
@@ -184,6 +189,7 @@ impl Mutation {
         Ok(new_user)
     }
 
+    // TODO make a function to *append* alt_id_fields
     #[graphql(guard(CapabilityGuard(capability = "TokenCapability::Collector")))]
     async fn update_user(
         &self,

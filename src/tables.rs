@@ -147,6 +147,13 @@ impl InputValueValidator for PhoneNumber {
                 Ok(_) => return Ok(()),
                 Err(e) => return Err(format!("Phone number validation failed: error {}", e)),
             }
+        } else if let Value::Null = value {
+            // That's okay since this field is nullable and
+            // it'll just go in as null.
+            //
+            // Although if I'm supposed to add this *here*...
+            // no idea.
+            return Ok(());
         }
 
         Err(format!(
