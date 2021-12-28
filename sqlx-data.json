@@ -187,6 +187,22 @@
       ]
     }
   },
+  "2ce0405b3747921167f2a76656533ab1cf7818e4b730ef271ecf19b1201db1c5": {
+    "query": "UPDATE users SET (full_name, email, phone_number, alt_id_fields) = ($1, $2, $3, $4) WHERE uuid=$5",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar",
+          "Jsonb",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "3f0fa09346c81e7a923ee736105646bfb8e82951ef7b551e172d831b1b42c0d6": {
     "query": "SELECT * FROM users where full_name LIKE $1",
     "describe": {
@@ -298,21 +314,6 @@
         true,
         true
       ]
-    }
-  },
-  "636da0afeaeb91fa82a01e7c200764dc3705a1d356395273bdf318d66242b90a": {
-    "query": "UPDATE users SET (full_name, email, phone_number) = ($1, $2, $3) WHERE uuid=$4",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Uuid"
-        ]
-      },
-      "nullable": []
     }
   },
   "70c714b44699894a2db52351b470aeff3548526a2dfffbf2bc70b42018901a63": {
